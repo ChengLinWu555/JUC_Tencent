@@ -40,6 +40,28 @@ class MyCaChe{
 public class ReentrantReadWriteLockDemo {
     public static void main(String[] args) {
         MyCaChe myCaChe = new MyCaChe();
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(10, 11, 1L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(3), Executors.defaultThreadFactory(), new ThreadPoolExecutor.CallerRunsPolicy());
+        for (int i = 0; i < 10; i++) {
+            try{
+                threadPoolExecutor.execute(()->{
+                    for (int j = 1; j <= 10; j++) {
+                        int finalI = j;
+                        myCaChe.write(finalI +"", finalI +"");
+                    }
+                });
+                threadPoolExecutor.execute(() -> {
+                    for (int j = 1; j <= 10; j++) {
+                        int finalI = j;
+                        myCaChe.read(finalI + "");
+                    }
+                });
+            }finally{
+                threadPoolExecutor.shutdown();
+            }
+        }
+    }
+
+    public static void teach(MyCaChe myCaChe) {
         for (int i = 1; i <=10; i++) {
             int finalI = i;
             new Thread(() -> {
@@ -53,7 +75,6 @@ public class ReentrantReadWriteLockDemo {
                 myCaChe.read(finalI +"");
             },String.valueOf(i)).start();
         }
-
     }
 
     public static void thread(MyCaChe myCaChe) {
