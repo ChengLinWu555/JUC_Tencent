@@ -1,6 +1,7 @@
 package com.atguigu.juc;
 
 import java.sql.Connection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -11,29 +12,93 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 class Test1{
     int fag = 1;
-    int number = 5;
     private Lock lock = new ReentrantLock();
     private Condition condition1 = lock.newCondition();
     private Condition condition2 = lock.newCondition();
     private Condition condition3 = lock.newCondition();
-    public void testList(int fag,int number) throws InterruptedException {
+    public void testList() throws InterruptedException {
         lock.lock();
         try{
             //判断
-//            switch (fag){
-//                case 1:condition3.await();condition2.signal();fag = 2;
-//                case 2:condition1.await();condition3.signal();fag = 3;number = 10;
-//                case 3:condition2.await();condition1.signal();fag = 1;number = 15;
-//            }
-            //干活
-            //判断
-            while (fag !=1){
+            while (fag != 1 && "A".equals(Thread.currentThread().getName())){
                 condition1.await();
+            }
+            while (fag != 2 && "B".equals(Thread.currentThread().getName())){
+                condition2.await();
+            }
+            while (fag != 3 && "C".equals(Thread.currentThread().getName())){
+                condition3.await();
+            }
+            //干活
+            for (int i = 1; i <= fag * 5; i++) {
+                System.out.println(Thread.currentThread().getName()+"---"+i);
+            }
+            //修改标志位
+            if (fag == 3){
+                fag=1;
+            }else{
+                fag++;
+            }
+            switch (fag){
+                case 1:
+                    condition1.signal();break;
+                case 2:
+                    condition2.signal();break;
+                case 3:
+                    condition3.signal();break;
             }
         }finally{
             lock.unlock();
         }
+    }
+    public void test5() throws InterruptedException {
+        lock.lock();
+        try{
 
+            //判断
+            while (fag != 1){
+                condition1.await();
+            }
+            //干活
+            for (int i = 1; i < 5; i++) {
+                System.out.println(Thread.currentThread().getName()+"---"+i);
+            }
+            fag = 2;
+            //通知
+            condition2.signal();
+        }finally{
+            lock.unlock();
+        }
+    }
+    public void test10() throws InterruptedException {
+        lock.lock();
+        try{
+            while (fag != 2){
+                condition2.await();
+            }
+            for (int i = 1; i < 10; i++) {
+                System.out.println(Thread.currentThread().getName()+"---"+i);
+            }
+            fag=3;
+            condition3.signal();
+        }finally{
+            lock.unlock();
+        }
+    }
+    public void test15() throws InterruptedException {
+        lock.lock();
+        try{
+            while (fag != 3){
+                condition3.await();
+            }
+            for (int i = 1; i < 15; i++) {
+                System.out.println(Thread.currentThread().getName()+"---"+i);
+            }
+            fag=1;
+            condition1.signal();
+        }finally{
+            lock.unlock();
+        }
     }
 }
 public class ThreadOrderAccess {
@@ -42,7 +107,7 @@ public class ThreadOrderAccess {
         new Thread(() -> {
             for (int i = 0; i < 10; i++) {
                 try {
-                    test1.testList(1,5);
+                    test1.testList();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -51,7 +116,7 @@ public class ThreadOrderAccess {
         new Thread(() -> {
             for (int i = 0; i < 10; i++) {
                 try {
-                    test1.testList(2,10);
+                    test1.testList();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -60,7 +125,7 @@ public class ThreadOrderAccess {
         new Thread(() -> {
             for (int i = 0; i < 10; i++) {
                 try {
-                    test1.testList(3,15);
+                    test1.testList();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

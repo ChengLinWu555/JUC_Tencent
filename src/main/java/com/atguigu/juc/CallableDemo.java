@@ -24,6 +24,6 @@ public class CallableDemo {
         Thread thread = new Thread(futureTask,"A");
         thread.start();
         System.out.println(Thread.currentThread().getName()+"-----end");
-//        System.out.println(futureTask.get());
+        System.out.println(futureTask.get());
     }
 }
